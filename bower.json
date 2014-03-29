@@ -11,6 +11,7 @@
     "src/main.css"
   ],
   "dependencies": {
-    "x-tag-core": "*"
+    "x-tag-core": "*",
+    "prepend-mixin": "*"
   }
 }
