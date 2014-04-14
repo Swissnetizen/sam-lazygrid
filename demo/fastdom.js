@@ -8,7 +8,7 @@
  * @author Wilson Page <wilsonpage@me.com>
  */
 
-;(function(fastdom){
+(function(fastdom){
 
   'use strict';
 

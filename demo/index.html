@@ -6,19 +6,31 @@
     <title>Stub Demo - X-Tag</title>
     <link rel="stylesheet" type="text/css" href="x-tag-components.css"/>
 	<link rel="stylesheet" type="text/css" href="../src/main.css"/>
-
-    <script type="text/javascript" src="x-tag-components.js"></script> 
-    <script type="text/javascript" src="../src/main.js"></script>      
+    <script type="text/javascript" src="x-tag-components.js"></script>
+    <script type="application/javascript" src="prepend.js"></script>  
+    <script type="application/javascript" src="fastdom.js"></script> 
+    <script type="text/javascript" src="../src/lazygrid.js"></script>   
 	<style>
 
 	</style>
+  <script>
+    window.onload = function () {
+      var grid = document.getElementsByTagName("sam-lazygrid")[0];
+      grid.count = 100;
+      grid.setupItem = function (index) {
+        var node = document.createElement("article");
+        node.innerHTML = index;
+        return node;
+      }
+      console.dir(grid);
+      grid.render();
+    }
+  </script>
 </head>
 
 <body>
-
 	<h2>Create a Demo</h2>
-
-
+  <sam-lazygrid></sam-lazygrid>
 </body>
 
 </html>

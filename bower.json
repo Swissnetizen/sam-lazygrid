@@ -1,5 +1,5 @@
 {
-  "name": "stub",
+  "name": "sam-lazygrid",
   "description": "",
   "version": "0.1.0",
   "keywords": [
@@ -12,6 +12,7 @@
   ],
   "dependencies": {
     "x-tag-core": "*",
-    "prepend-mixin": "*"
+    "prepend-mixin": "*",
+    "fastdom": "*"
   }
 }
