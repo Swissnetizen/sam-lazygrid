@@ -81,7 +81,8 @@
     methods: {
       //Starts rendering the list.
       render: function(top) {
-        var x = this.xtag;
+        var x = this.xtag,
+            inside = true;
         if (!x.setupItem || !x.count || x.active) return false;
         x.topIndex = undefined;
         x.bottomIndex = undefined;
@@ -89,19 +90,19 @@
         x.extraRenderRangeUp = [undefined, undefined];
         x.extraRenderRangeDown = [undefined, undefined];
         x.active = true;
-        while (this.itemInViewport(bottomIndex)) {
+        while (inside) {
           this.renderItem();
+          inside = this.itemInViewport(x.bottomIndex)
         }
         x.halfCount = Math.ceil(x.count/2);
         return true;
       },
       //Destroys everything except itself.
-      destroy: function () {
+      destroySync: function () {
         this.destroyItems(0, this.count-1);
       },
-      //Renders a single Item
-      renderItem: function (index) {
-        fastdom.write(function () {
+      //Renders a single Item(Sync)
+      renderItemSync: function (index) {
           if (!this.xtag.active || index > this.xtag.count-1 || index < 0) return false;
           var node = this.xtag.setupItem(index);
           //Replace an existing node
@@ -115,10 +116,9 @@
             this.prepend(node);
             this.xtag.topIndex = index;
           }
-      }.bind(this));
       },
-      //Renders multiple Items
-      renderItems: function(indexStart, indexEnd) {
+      //Renders multiple Items(Sync)
+      renderItemsSync: function(indexStart, indexEnd) {
         //Allows you to use an array instead of two seperate
         //Arguments
         if (Array.isArray(argument[0])) {
@@ -128,13 +128,13 @@
         fastdom.write()
       },
 
-      //Destroys a single Item
-      destroyItem: function(index) {
+      //Destroys a single Item(Sync)
+      destroyItemSync: function(index) {
         if (!this.getItem(index) || !this.xtag.active) return false;
         this.removeChild(this.getItem(index))
       },
       //Destroys multiple Items
-      destroyItems: function(indexStart, indexEnd) {
+      destroyItemsSync: function(indexStart, indexEnd) {
         //Allows you to use an array instead of two seperate
         //Arguments
         if (Array.isArray(argument[0])) {
@@ -147,7 +147,7 @@
         }
       },
       //Returns a single Item
-      getItem: function(index) {
+      getItemSync: function(index) {
         return this.querySelector("[data-index=" + index + "]");
       },
       //Returns multiple Items as an array
@@ -156,7 +156,7 @@
       //It's just here to replicate the experience of 
       //the other xxxxxItem functions having a 
       //doppleganger for multiple items.
-      getItems: function(indexStart, indexEnd) {
+      getItemsSync: function(indexStart, indexEnd) {
         //Allows you to use an array instead of two seperate
         //Arguments
         if (Array.isArray(argument[0])) {
@@ -172,8 +172,8 @@
         }
         return array;
       },
-      itemInViewport: function(index) {
-        var rect = el.getBoundingClientRect();
+      itemInViewportSync: function(index) {
+        var rect = this.getItem(index).getBoundingClientRect();
         return (
           rect.top >= 0 &&
           rect.left >= 0 &&
@@ -181,7 +181,7 @@
           rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
         );
       },
-      itemsInViewport: function(indexStart, indexEnd) {
+      itemsInViewportSync: function(indexStart, indexEnd) {
         //Allows you to use an array instead of two seperate
         //Arguments
         if (Array.isArray(argument[0])) {
