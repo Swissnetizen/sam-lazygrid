@@ -12,7 +12,6 @@
   ],
   "dependencies": {
     "x-tag-core": "*",
-    "prepend-mixin": "*",
-    "fastdom": "*"
+    "prepend-mixin": "*"
   }
 }
