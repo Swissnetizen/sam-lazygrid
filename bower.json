@@ -1,0 +1,19 @@
+{
+  "name": "sam-lazygrid",
+  "description": "It provides a simple way to create a list which lazy loads the content.",
+  "version": "0.0.0",
+  "author": "Samarth AGARWAL",
+  "keywords": [
+  	"Element",
+    "web-components",
+    "x-tag"
+  ],
+  "main": [
+    "src/lazygrid.js"
+    ,"src/lazygrid.css"
+    ,"src/lazygrid.styl"
+  ],
+  "dependencies": {
+    "x-tag-core": "*"
+  }
+}

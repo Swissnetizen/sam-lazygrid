@@ -1,0 +1,24 @@
+{
+  "name": "sam-lazygrid",
+  "tagName": "sam-lazygrid",
+  "version": "0.0.0",
+  "author": "Samarth AGARWAL",
+  "description": "It provides a simple way to create a list which lazy loads the content.",
+  "demo": "demo/index.html",
+  "compatibility": {
+    "firefox": 5,
+    "chrome": 4,
+    "ie": 9,
+    "opera": 12,
+    "android": 2.1,
+    "ios": 4
+  },
+  "documentation": {
+    "description": "It provides a simple way to create a list which lazy loads the content.",
+    "attributes": {},
+    "events": {},
+    "methods": {},
+    "getters": {},
+    "setters": {}
+  }
+}
