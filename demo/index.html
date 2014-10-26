@@ -22,9 +22,26 @@
 </body>
 <script type="text/javascript">
 
-  document.addEventListener('DOMComponentsLoaded', function(){
+  document.addEventListener('DOMComponentsLoaded', function() {
     var grid = document.getElementById("grid");
-    grid
+    grid.itemSetup = function (i) {
+      var node = document.createElement("article"),
+          html;
+      if (i === 1) {
+        html = "I'm № 1, bit lonely all by my self, being in the nonprime, noncomposite category."
+      }
+      else if (i === 42) {
+        html = "I'm № 42, the answer to life!";
+      } else if (i % 2 != 0) {
+       html = "Hello, I'm Item № " + i + "and I'm an odd №!";
+      } else if (i % 2 === 0) {
+        html = "Hello, I'm Item № " + i + "and I'm an even №!";
+      }
+      node.innerHTML = html;
+      return node;
+    };
+    grid.count = 100;
+    grid.render(0);
   });
 
 </script>
