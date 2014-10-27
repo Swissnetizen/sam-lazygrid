@@ -15,7 +15,7 @@
   </style>
 </head>
 <body id="app">
-  <sam-lazygrid id="grid">
+  <sam-lazygrid id="grid" verbose="verbose">
 
          DPADFAS
   </sam-lazygrid>
@@ -40,7 +40,7 @@
       node.innerHTML = html;
       return node;
     };
-    grid.count = 100;
+    grid.count = 1000;
     grid.render(0);
   });
 
