@@ -1,5 +1,14 @@
 (function(){
   "use strict";
+  var onScrollDown = function () {
+    //If the bottom half of the items aren't visible, then return.
+    if (!this.inViewport(Math.round(this.bottomId - this.maxItems / 2))) return;
+    this.renderItems(this.bottomId+1, this.bottomId+this.maxItems);
+    //Destroy All elements not in viewport
+    if (!this.inViewport(this.topId)) {
+      this.destroyItems(this.topId, this.bottomId, true, true);
+    }
+  };
   xtag.register('sam-lazygrid', {
   	lifecycle: {
   		created: function(){
@@ -12,19 +21,8 @@
         console.log("scroll")
         //"Down"
         if (data.delta < 0) {
-          xtag.fireEvent(this, "scrollDown");
+          fastdom.read(onScrollDown.bind(this));;
         }
-      },
-      "scrollDown": function () {
-         //If the bottom half of the items aren't visible, then return.
-         if (!this.inViewport(Math.round(this.bottomId - this.maxItems / 2))) return;
-         requestAnimationFrame( function () {
-           this.renderItems(this.bottomId+1, this.bottomId+this.maxItems);
-         }.bind(this) );
-         //Destroy All elements not in viewport
-         if (!this.inViewport(this.topId)) {
-           this.destroyItems(this.topId, this.bottomId, true, true);
-         }
       }
     },
   	accessors: {
@@ -107,18 +105,19 @@
         }
         //With animation frame
         if (animFrame) {
-          requestAnimationFrame(function () {
+          fastdom.write(function () {
             this.appendChild(node);
           }.bind(this));
         }
         //Without animationFrame
         this.appendChild(node);
       },
-      renderItems: function (topId, bottomId, stopWhenOutOfViewport, animFrame) {
+      renderItems: function (topId, bottomId, stopWhenOutOfViewport) {
         if (!this.active) return false;
         var i, node;
         for (i=topId; i<= bottomId; i++) {
-          this.renderItem(i, false, animFrame);
+
+          this.renderItem(i, false);
           if (stopWhenOutOfViewport && !this.inViewport(i)) return i;
         }
         return true;
@@ -135,33 +134,37 @@
         if (!this.active) return false;
         return this.querySelector('[data-lazy-grid-id="'+i+'"]');
       },
-      destroyItem: function (i, animFrame) {
+      destroyItem: function (i) {
         if (!this.active) return false;
-        var node = this.getItem(i);
-        //Errorchecking
-        if (node === null) this.error("Cannot destroy item which is NULL", true);
-        this.log("destroy №" + i)
-        //With anim frame
-        if (animFrame) {
-          requestAnimationFrame(function () {
-            this.removeChild(node);
+        if (i < 0 || i > this.count) return;
+        fastdom.read(function () {
+          //Define variables
+          var that = this.that,
+              i = this.i,
+              node = that.getItem(i);
+          //Errorchecking
+          if (node === null) that.error("Cannot destroy item which is NULL", true);
+          that.log("destroy №" + i);
+          //Actually Destroys
+          fastdom.write(function () {
+            that.removeChild(node);
           }.bind(this));
-          //Without animframe
-        } else {
-          this.removeChild(node);
-        }
-        //Set top/bottom id
-        if (i === this.topId) this.topId += 1;
-        if (i === this.bottomId) this.bottomId -= 1;
+          //Set top/bottom id
+          if (i === that.topId) that.topId += 1;
+          if (i === that.bottomId) that.bottomId -= 1;
+        }.bind({that: this, i:i}));
       },
-      destroyItems: function (topId, bottomId, stopWhenInViewport, animFrame) {
+      destroyItems: function (topId, bottomId, stopWhenInViewport) {
         if (!this.active) return false;
         var i;
         this.log("start destroying")
         for (i=topId; i<= bottomId; i++) {
-          if (stopWhenInViewport && this.inViewport(i)) return i;
-          this.log("DESTROY ITEM № " + i);
-          this.destroyItem(i, animFrame);
+          fastdom.read(function () {
+            var that = this.that;
+            if (this.stopWhenInViewport && that.inViewport(this.i)) return i;
+            that.log("DESTROY ITEM № " + i);
+            that.destroyItem(i);
+          }.bind({that: this, i: i, stopWhenInViewport: stopWhenInViewport}));
         }
       },
       error: function (e, thro) {
