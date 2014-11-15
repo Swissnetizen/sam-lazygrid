@@ -51,7 +51,7 @@
           return this.var.topId;
         },
         set: function (value) {
-          if ((value < 0 || value > this.count) && this.verbose) {
+          if (value < 0 || value > this.count) {
             console.warn("Ignored attempt to set topId value because it was out of bounds"); }
           this.var.topId = value;
         }
@@ -61,7 +61,7 @@
           return this.var.bottomId;
         },
         set: function (value) {
-          if ((value < 0 || value > this.count) && this.verbose) {
+          if (value < 0 || value > this.count) {
             console.warn("Ignored attempt to set bottomId value because it was out of bounds"); }
           this.var.bottomId = value;
         }
@@ -87,39 +87,37 @@
         this.oldChildren = {};
       },
       //Takes item№ and wheater or not to render from scratch or reuse the old one.
-      renderItem: function (i, fresh, animFrame) {
-        if (!this.active) return false;
-        if (i > this.count || i < 0) return false;
-        // if (this.oldChildren[i]) this.appendChild
-        var node = this.itemSetup(i);
-        //I would prefer ID, but then dataset would interpret it as "-i-d"
-        //That looked AWFUL.
-        //I'm also using Id because of convention.
-        node.dataset.lazyGridId = i;
-        //Check for topId
-        if (this.topId > i) this.topId = i;
-        //Check for bottomId
-        if (this.bottomId < i) {
-          this.bottomId = i;
-          this.topId += 1;
-        }
-        //With animation frame
-        if (animFrame) {
+      //Also takes condition and callback
+      renderItem: function (i, fresh, callback) {
+        if (!this.active || i > this.count || i < 0) return false;
+        fastdom.read(function () {
+          var that = this.that;
+          // if (this.oldChildren[i]) this.appendChild
+          var node = that.itemSetup(i);
+          node.dataset.lazyGridId = i;
+          //Check for topId
+          if (that.topId > i) this.topId = i;
+          //Check for bottomId
+          if (that.bottomId < i) that.bottomId = i;
           fastdom.write(function () {
-            this.appendChild(node);
-          }.bind(this));
-        }
-        //Without animationFrame
-        this.appendChild(node);
+            that.appendChild(node);
+            return this.cb(i);
+          //More parameters
+          }.bind({that: this, cb: this.callback, i: i}));
+        //Parameters
+        }.bind({that: this, i: i, callback: callback, fresh: fresh}));
       },
-      renderItems: function (topId, bottomId, stopWhenOutOfViewport) {
-        if (!this.active) return false;
-        var i, node;
-        for (i=topId; i<= bottomId; i++) {
-
-          this.renderItem(i, false);
-          if (stopWhenOutOfViewport && !this.inViewport(i)) return i;
-        }
+      renderItems: function (topId, bottomId, stopWhenOutOfViewport, fresh) {
+        if (!this.active || this.bottomId > this.count || this.topId < 0) return false;
+        this.renderItem(topId, fresh, function (i) {
+          fastdom.read(function () {
+          //Referencing the element's this
+            var that = this.that;
+            if (i === this.bottomId) return;
+            if (this.stopWhenOutOfViewport && !that.inViewport(i)) return false;
+            that.renderItems(i+1, this.bottomId, this.stopWhenOutOfViewport, this.fresh);
+          }.bind(this));
+        }.bind({that: this, bottomId: bottomId, stopWhenOutOfViewport: stopWhenOutOfViewport, fresh: fresh}));
         return true;
       },
       //Returns if in viewport, accepts item№
@@ -143,7 +141,7 @@
               i = this.i,
               node = that.getItem(i);
           //Errorchecking
-          if (node === null) that.error("Cannot destroy item which is NULL", true);
+          if (node === null) throw "Cannot destroy item which is NULL"
           that.log("destroy №" + i);
           //Actually Destroys
           fastdom.write(function () {
@@ -154,8 +152,9 @@
           if (i === that.bottomId) that.bottomId -= 1;
         }.bind({that: this, i:i}));
       },
+      //Destroy Items, takes top, bottom and stop in viewport
       destroyItems: function (topId, bottomId, stopWhenInViewport) {
-        if (!this.active) return false;
+        if (!this.active || topId) return false;
         var i;
         this.log("start destroying")
         for (i=topId; i<= bottomId; i++) {
