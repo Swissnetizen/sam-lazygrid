@@ -12,7 +12,6 @@
     }
     //Destroy All elements not in viewport
     if (!this.inViewport(this.topId) && !this.flagDestroyDown) {
-      console.log("Destroy");
       //To prevent multiple instances of the function running;
       this.flagDestroyDown = true;
       this.destroyItems(this.topId, this.bottomId, true, function () {
@@ -148,13 +147,12 @@
       destroyItem: function (i, callback) {
         if (!this.active) return false;
         //Number out of bounds?
-        if (i <= this.topId || i >= this.bottomId) return false;
+        if (i < this.topId || i > this.bottomId) return callback ? callback(false) : false;
         fastdom.read(function () {
           //Define variable
           var node = this.getItem(i);
           //Error checking
           if (node === null) throw "Cannot destroy item which is NULL";
-          this.log("destroy №" + i);
           //Destroy item
           fastdom.write(function () {
             this.removeChild(node);
@@ -172,7 +170,6 @@
           //Bind, read
           fastdom.read(function () {
             //Success
-            console.log(topId);
             if (topId === bottomId) {
               return typeof callback === "function" ? callback(topId) : true;
             }
