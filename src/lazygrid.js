@@ -2,23 +2,34 @@
   "use strict";
   var onScrollDown = function () {
     //If the bottom half of the items aren't visible, then return.
-    if (!this.inViewport(Math.round(this.bottomId - this.maxItems / 2))) return;
-    this.renderItems(this.bottomId+1, this.bottomId+this.maxItems);
+    if (!this.inViewport(Math.round(this.bottomId - this.maxItems))) return;
+    //Is a renderItems for scroll down currently running ?
+    if (!this.flagRenderDown) {
+      this.flagRenderDown = true;
+      this.renderItems(this.bottomId+1, this.bottomId+this.maxItems, false, false, function () {
+        this.flagRenderDown = false;
+      }.bind(this));
+    }
     //Destroy All elements not in viewport
-    if (!this.inViewport(this.topId)) {
-      this.destroyItems(this.topId, this.bottomId, true, true);
+    if (!this.inViewport(this.topId) && !this.flagDestroyDown) {
+      console.log("Destroy");
+      //To prevent multiple instances of the function running;
+      this.flagDestroyDown = true;
+      this.destroyItems(this.topId, this.bottomId, true, function () {
+        this.flagDestroyDown = false;
+      }.bind(this));
     }
   };
   xtag.register('sam-lazygrid', {
   	lifecycle: {
-  		created: function(){
+  		created: function () {
         this.var = {};
   		}
   	},
   	events: {
       //On scroll
       "scrollwheel": function (data) {
-        console.log("scroll")
+        console.log("scroll");
         //"Down"
         if (data.delta < 0) {
           fastdom.read(onScrollDown.bind(this));;
@@ -80,9 +91,10 @@
         //Define
         this.topId = topId;
         //Begin intial rendering.
-        this.bottomId = this.renderItems(topId, this.count, true, true);
-        //Define maximum items on the screen
-        this.maxItems = this.bottomId - topId;
+        this.bottomId = this.renderItems(topId, this.count, true, true, function (i) {
+          //Define maximum items on the screen
+          this.maxItems = i - this.topId;
+        }.bind(this));
         return true;
         this.oldChildren = {};
       },
@@ -107,17 +119,18 @@
         //Parameters
         }.bind({that: this, i: i, callback: callback, fresh: fresh}));
       },
-      renderItems: function (topId, bottomId, stopWhenOutOfViewport, fresh) {
+      renderItems: function (topId, bottomId, stopWhenOutOfViewport, fresh, callback) {
         if (!this.active || this.bottomId > this.count || this.topId < 0) return false;
         this.renderItem(topId, fresh, function (i) {
           fastdom.read(function () {
           //Referencing the element's this
             var that = this.that;
-            if (i === this.bottomId) return;
-            if (this.stopWhenOutOfViewport && !that.inViewport(i)) return false;
-            that.renderItems(i+1, this.bottomId, this.stopWhenOutOfViewport, this.fresh);
+            if (i === this.bottomId) return this.callback(i);
+            //Stop when out of viewport, *and* not in viewport.   Does callback exist.
+            if (this.stopWhenOutOfViewport && !that.inViewport(i)) return this.callback ? this.callback(i) : false;
+            that.renderItems(i+1, this.bottomId, this.stopWhenOutOfViewport, this.fresh, this.callback);
           }.bind(this));
-        }.bind({that: this, bottomId: bottomId, stopWhenOutOfViewport: stopWhenOutOfViewport, fresh: fresh}));
+        }.bind({that: this, bottomId: bottomId, stopWhenOutOfViewport: stopWhenOutOfViewport, fresh: fresh, callback: callback}));
         return true;
       },
       //Returns if in viewport, accepts item№
@@ -132,39 +145,44 @@
         if (!this.active) return false;
         return this.querySelector('[data-lazy-grid-id="'+i+'"]');
       },
-      destroyItem: function (i) {
+      destroyItem: function (i, callback) {
         if (!this.active) return false;
-        if (i < 0 || i > this.count) return;
+        //Number out of bounds?
+        if (i <= this.topId || i >= this.bottomId) return false;
         fastdom.read(function () {
-          //Define variables
-          var that = this.that,
-              i = this.i,
-              node = that.getItem(i);
-          //Errorchecking
-          if (node === null) throw "Cannot destroy item which is NULL"
-          that.log("destroy №" + i);
-          //Actually Destroys
+          //Define variable
+          var node = this.getItem(i);
+          //Error checking
+          if (node === null) throw "Cannot destroy item which is NULL";
+          this.log("destroy №" + i);
+          //Destroy item
           fastdom.write(function () {
-            that.removeChild(node);
+            this.removeChild(node);
+            return callback(i);
           }.bind(this));
-          //Set top/bottom id
-          if (i === that.topId) that.topId += 1;
-          if (i === that.bottomId) that.bottomId -= 1;
-        }.bind({that: this, i:i}));
+          //(re)Set top/bottom id
+          if (i === this.topId) this.topId += 1;
+          if (i === this.bottomId) this.bottomId -= 1;
+        }.bind(this));
       },
       //Destroy Items, takes top, bottom and stop in viewport
-      destroyItems: function (topId, bottomId, stopWhenInViewport) {
-        if (!this.active || topId) return false;
-        var i;
-        this.log("start destroying")
-        for (i=topId; i<= bottomId; i++) {
+      destroyItems: function (topId, bottomId, stopWhenInViewport, callback) {
+        if (!this.active || typeof topId != "number") return false;
+        this.destroyItem(topId, function () {
+          //Bind, read
           fastdom.read(function () {
-            var that = this.that;
-            if (this.stopWhenInViewport && that.inViewport(this.i)) return i;
-            that.log("DESTROY ITEM № " + i);
-            that.destroyItem(i);
-          }.bind({that: this, i: i, stopWhenInViewport: stopWhenInViewport}));
-        }
+            //Success
+            console.log(topId);
+            if (topId === bottomId) {
+              return typeof callback === "function" ? callback(topId) : true;
+            }
+            //Stopped early, counts as fail
+            if (stopWhenInViewport && this.inViewport(topId+1)) {
+              return typeof callback === "function" ? callback(topId) : false;
+            }
+            this.destroyItems(topId+1, bottomId, stopWhenInViewport, callback);
+          }.bind(this));
+        }.bind(this));
       },
       error: function (e, thro) {
         if (!this.verbose) return false;
